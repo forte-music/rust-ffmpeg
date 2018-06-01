@@ -6,6 +6,10 @@ pub use self::input::Input;
 
 pub mod output;
 pub use self::output::Output;
+pub use self::output::OutputStream;
+
+pub mod io;
+pub use self::io::IOContextWrite;
 
 #[doc(hidden)]
 pub mod common;

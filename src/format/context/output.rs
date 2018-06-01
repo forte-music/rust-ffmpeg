@@ -9,7 +9,38 @@ use super::common::Context;
 use super::destructor;
 use codec::traits;
 use ffi::*;
+use format::context::IOContextWrite;
+use std::io::Seek;
+use std::io::Write;
 use {format, ChapterMut, Dictionary, Error, Rational, StreamMut};
+
+pub struct OutputStream<O: Write + Seek + 'static> {
+    inner: Output,
+    stream: IOContextWrite<O>,
+}
+
+impl<O> OutputStream<O>
+where
+    O: Write + Seek + 'static,
+{
+    pub unsafe fn wrap(ptr: *mut AVFormatContext, stream: IOContextWrite<O>) -> Self {
+        let inner = Output::wrap_stream(ptr);
+
+        OutputStream { inner, stream }
+    }
+
+    pub fn inner(&self) -> &Output {
+        &self.inner
+    }
+
+    pub fn inner_mut(&mut self) -> &mut Output {
+        &mut self.inner
+    }
+
+    pub fn get_stream(&self) -> &O {
+        self.stream.inner()
+    }
+}
 
 pub struct Output {
     ptr: *mut AVFormatContext,
@@ -26,6 +57,12 @@ impl Output {
         }
     }
 
+    pub unsafe fn wrap_stream(ptr: *mut AVFormatContext) -> Self {
+        Output {
+            ptr: ptr,
+            ctx: Context::wrap(ptr, destructor::Mode::OutputStream),
+        }
+    }
     pub unsafe fn as_ptr(&self) -> *const AVFormatContext {
         self.ptr as *const _
     }
